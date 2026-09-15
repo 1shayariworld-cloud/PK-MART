@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PK Mart - Online Shopping</title>
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background: #f4f6f8; color: #333; }
+    
+    /* Header */
+    .header { background: #f43397; color: white; padding: 14px 16px; text-align: center; font-size: 20px; font-weight: bold; position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+    .header-title { font-size: 22px; letter-spacing: 1px; }
+    .admin-btn { background: white; color: #f43397; border: none; padding: 6px 12px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 13px; }
+
+    /* Layout */
+    .container { padding: 15px; max-width: 480px; margin: auto; padding-bottom: 70px; }
+    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 20px; }
+    h2, h3 { color: #222; margin-top: 0; }
+    
+    /* Form Elements */
+    label { font-size: 13px; font-weight: bold; color: #666; display: block; margin-top: 10px; }
+    input, select, textarea { width: 100%; padding: 12px; margin: 6px 0 12px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; outline: none; }
+    input:focus, select:focus, textarea:focus { border-color: #f43397; }
+
+    .btn { background: #f43397; color: white; border: none; padding: 14px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    .btn:active { background: #d0207d; }
+    
+    /* Captcha Box */
+    .captcha-row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+    .captcha-box { background: #222; color: #00ffcc; padding: 10px 15px; font-weight: bold; letter-spacing: 5px; text-align: center; font-size: 20px; border-radius: 8px; user-select: none; font-family: monospace; flex: 1; }
+    .refresh-captcha { background: #eee; border: none; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 16px; }
+
+    /* Products Grid */
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .product-card { background: white; border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.06); border: 1px solid #eee; }
+    .product-card img { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; }
+    .product-card h4 { margin: 8px 0 4px 0; font-size: 14px; color: #333; }
+    .price { color: #f43397; font-weight: bold; font-size: 16px; margin: 4px 0 10px 0; }
+    .buy-btn { background: #28a745; color: white; border: none; padding: 8px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; }
+
+    /* Bottom Navigation Bar */
+    .nav-tabs { display: flex; justify-content: space-around; background: white; padding: 12px 0; border-top: 1px solid #e0e0e0; position: fixed; bottom: 0; left: 0; right: 0; width: 100%; max-width: 480px; margin: auto; z-index: 100; }
+    .nav-tabs button { background: none; border: none; color: #666; font-weight: bold; font-size: 14px; cursor: pointer; flex: 1; }
+    .nav-tabs button.active { color: #f43397; }
+
+    #store-screen, #return-screen, #admin-screen { display: none; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <span class="header-title">PK Mart</span>
+    <button class="admin-btn" onclick="showAdminPrompt()">Admin Login</button>
+  </div>
+
+  <div class="container">
+    
+    <!-- 1. यूजर साइन-अप / लॉगिन -->
+    <div id="auth-screen" class="card">
+      <h2>PK Mart में स्वागत है</h2>
+      <p style="font-size:13px; color:#666;">खरीदारी शुरू करने के लिए अकाउंट बनाएँ:</p>
+      
+      <label>पूरा नाम:</label>
+      <input type="text" id="uName" placeholder="अपना नाम लिखें">
+      
+      <label>मोबाइल नंबर:</label>
+      <input type="tel" id="uMobile" placeholder="10-डिजिट मोबाइल नंबर">
+      
+      <label>पासवर्ड:</label>
+      <input type="password" id="uPass" placeholder="अपना पासवर्ड बनाएँ">
+      
+      <label>कैप्चा कोड दर्ज करें:</label>
+      <div class="captcha-row">
+        <div id="captchaCode" class="captcha-box">------</div>
+        <button class="refresh-captcha" onclick="generateCaptcha()">🔄</button>
+      </div>
+      <input type="text" id="uCaptcha" placeholder="ऊपर दिया कोड यहाँ लिखें">
+
+      <button class="btn" onclick="handleAuth()">लॉगिन / साइन-अप करें</button>
+    </div>
+
+    <!-- 2. स्टोर / कैटलॉग पेज -->
+    <div id="store-screen">
+      <h3 style="margin-bottom: 12px;">ट्रेंडिंग प्रोडक्ट्स</h3>
+      <div class="grid" id="productList">
+        <!-- डिफ़ॉल्ट प्रोडक्ट -->
+        <div class="product-card">
+          <img src="https://via.placeholder.com/150/f43397/ffffff?text=PK+Mart" alt="Item">
+          <h4>स्टाइलिश मेन्स वॉच</h4>
+          <p class="price">₹399 <small style="font-size:10px; color:#777;">(COD उपलब्ध)</small></p>
+          <button class="buy-btn" onclick="openOrderModal('स्टाइलिश मेन्स वॉच', 399)">अभी ऑर्डर करें</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. रिटर्न व एक्सचेंज पेज -->
+    <div id="return-screen" class="card">
+      <h3>Return / Exchange रिक्वेस्ट</h3>
+      
+      <label>आप क्या करना चाहते हैं?</label>
+      <select id="rType">
+        <option value="Return">Return (रिफंड चाहिए)</option>
+        <option value="Exchange">Exchange (दूसरा साइज़/सामान चाहिए)</option>
+      </select>
+      
+      <label>Order ID:</label>
+      <input type="text" id="rOrderId" placeholder="उदा: PKM-4821">
+      
+      <label>मोबाइल नंबर:</label>
+      <input type="tel" id="rMobile" placeholder="रजिस्टर्ड मोबाइल नंबर">
+      
+      <label>पूरा पिक-अप पता:</label>
+      <textarea id="rAddress" rows="3" placeholder="मकान नंबर, गली, शहर, पिनकोड"></textarea>
+      
+      <label>कारण चुनें:</label>
+      <select id="rReason">
+        <option value="Damaged Item">Damaged Item (टूटा/खराब सामान)</option>
+        <option value="Defective Item">Defective Item (काम नहीं कर रहा)</option>
+        <option value="Size/Fit Issue">Size/Fit Issue (साइज़ सही नहीं)</option>
+        <option value="Wrong Item">Wrong Item (गलत सामान मिला)</option>
+        <option value="Other">Other (अन्य कारण)</option>
+      </select>
+      
+      <label>समस्या की फोटो (गूगल ड्राइव/इमेज लिंक):</label>
+      <input type="text" id="rPhoto" placeholder="फोटो का URL लिंक डालें">
+      
+      <label>अन्य विवरण:</label>
+      <textarea id="rDetails" rows="2" placeholder="समस्या के बारे में थोड़ा विस्तार से लिखें..."></textarea>
+      
+      <button class="btn" onclick="submitReturn()">रिक्वेस्ट सबमिट करें</button>
+    </div>
+
+    <!-- 4. PK Mart एडमिन पैनल -->
+    <div id="admin-screen" class="card">
+      <h3 style="color:#f43397;">👑 PK Mart एडमिन पैनल</h3>
+      <h4>नया प्रोडक्ट वेबसाइट पर जोड़ें:</h4>
+      
+      <label>प्रोडक्ट का नाम:</label>
+      <input type="text" id="pTitle" placeholder="उदा: फैंसी कुर्ती">
+      
+      <label>फ़ाइनल कीमत (₹ में):</label>
+      <input type="number" id="pPrice" placeholder="उदा: 499">
+      
+      <label>इमेज/फोटो लिंक (URL):</label>
+      <input type="text" id="pImg" placeholder="https://...">
+      
+      <button class="btn" onclick="addNewProduct()">वेबसाइट पर पब्लिश करें</button>
+    </div>
+
+  </div>
+
+  <!-- बॉटम नेविगेशन -->
+  <div class="nav-tabs" id="bottomNav" style="display:none;">
+    <button id="navStore" class="active" onclick="switchTab('store')">🛍️ स्टोर</button>
+    <button id="navReturn" onclick="switchTab('return')">🔄 रिटर्न/एक्सचेंज</button>
+  </div>
+
+  <script>
+    // आपका गूगल स्क्रिप्ट URL
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw2S6DCYeO-s6dtDv9z2UrM4on8Dp8DV9y7Rp3XSWSRNT8OiMXp_kXMe-RUD-uPwKjO6g/exec";
+    let currentCaptcha = "";
+
+    // 6-डिजिट का अल्फ़ान्यूमेरिक कैप्चा जनरेटर
+    function generateCaptcha() {
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+      let captcha = "";
+      for (let i = 0; i < 6; i++) {
+        captcha += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      currentCaptcha = captcha;
+      document.getElementById("captchaCode").innerText = captcha;
+    }
+
+    window.onload = generateCaptcha;
+
+    // यूजर रजिस्ट्रेशन / लॉगिन
+    function handleAuth() {
+      const name = document.getElementById("uName").value.trim();
+      const mobile = document.getElementById("uMobile").value.trim();
+      const pass = document.getElementById("uPass").value.trim();
+      const captchaInput = document.getElementById("uCaptcha").value.trim();
+
+      if (captchaInput !== currentCaptcha) {
+        alert("❌ गलत कैप्चा कोड! कृपया दोबारा देखकर सही टाइप करें।");
+        generateCaptcha();
+        return;
+      }
+
+      if (!name || !mobile || !pass) {
+        alert("⚠️ कृपया सभी फ़ील्ड (नाम, मोबाइल, पासवर्ड) भरें!");
+        return;
+      }
+
+      // बैकएंड गूगल शीट में सेव करना
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "signup", name, mobile, password: pass })
+      }).catch(err => console.log(err));
+
+      alert("✅ स्वागत है " + name + "! लॉगिन सफल हुआ।");
+      document.getElementById("auth-screen").style.display = "none";
+      document.getElementById("store-screen").style.display = "block";
+      document.getElementById("bottomNav").style.display = "flex";
+    }
+
+    // नेविगेशन स्विच करना
+    function switchTab(tab) {
+      document.getElementById("store-screen").style.display = tab === 'store' ? 'block' : 'none';
+      document.getElementById("return-screen").style.display = tab === 'return' ? 'block' : 'none';
+      document.getElementById("admin-screen").style.display = 'none';
+
+      document.getElementById("navStore").classList.toggle('active', tab === 'store');
+      document.getElementById("navReturn").classList.toggle('active', tab === 'return');
+    }
+
+    // ऑर्डर सबमिट करना
+    function openOrderModal(pName, pPrice) {
+      const mobile = prompt("ऑर्डर डिलीवरी के लिए अपना मोबाइल नंबर दर्ज करें:");
+      if (!mobile) return;
+
+      const address = prompt("अपना पूरा डिलीवरी पता (Address + Pincode) दर्ज करें:");
+      if (!address) return;
+
+      // ऑटो-जनरेटेड 4-डिजिट ऑर्डर ID
+      const orderId = "PKM-" + Math.floor(1000 + Math.random() * 9000);
+
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({ 
+          action: "order", 
+          orderId: orderId, 
+          product: pName, 
+          price: pPrice, 
+          name: "Customer", 
+          mobile: mobile, 
+          address: address 
+        })
+      });
+
+      alert(`🎉 ऑर्डर सफल हुआ!\n\nआपकी Order ID: ${orderId}\nसामान का नाम: ${pName}\nकीमत: ₹${pPrice} (Cash on Delivery)\n\nकृप्या अपनी Order ID नोट करके रखें!`);
+    }
+
+    // रिटर्न / एक्सचेंज सबमिट करना
+    function submitReturn() {
+      const rOrderId = document.getElementById("rOrderId").value.trim();
+      const rMobile = document.getElementById("rMobile").value.trim();
+      const rAddress = document.getElementById("rAddress").value.trim();
+
+      if (!rOrderId || !rMobile || !rAddress) {
+        alert("⚠️ कृपया Order ID, मोबाइल नंबर और पता भरें!");
+        return;
+      }
+
+      const rData = {
+        action: "return",
+        requestType: document.getElementById("rType").value,
+        orderId: rOrderId,
+        mobile: rMobile,
+        address: rAddress,
+        reason: document.getElementById("rReason").value,
+        details: document.getElementById("rDetails").value,
+        photoUrl: document.getElementById("rPhoto").value
+      };
+
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify(rData)
+      });
+
+      alert("✅ आपकी रिटर्न/एक्सचेंज रिक्वेस्ट सफलतापूर्वक सबमिट हो गई है! हम जल्द आपसे संपर्क करेंगे।");
+    }
+
+    // एडमिन लॉगिन (PKM8384)
+    function showAdminPrompt() {
+      const pass = prompt("PK Mart एडमिन पासवर्ड दर्ज करें:");
+      if (pass === "PKM8384") {
+        document.getElementById("auth-screen").style.display = "none";
+        document.getElementById("store-screen").style.display = "none";
+        document.getElementById("return-screen").style.display = "none";
+        document.getElementById("admin-screen").style.display = "block";
+      } else if (pass !== null) {
+        alert("❌ गलत एडमिन पासवर्ड!");
+      }
+    }
+
+    // एडमिन द्वारा नया प्रोडक्ट जोड़ना
+    function addNewProduct() {
+      const title = document.getElementById("pTitle").value.trim();
+      const price = document.getElementById("pPrice").value.trim();
+      let img = document.getElementById("pImg").value.trim();
+
+      if (!title || !price) {
+        alert("⚠️ कृपया प्रोडक्ट का नाम और कीमत दर्ज करें!");
+        return;
+      }
+
+      if (!img) img = "https://via.placeholder.com/150/f43397/ffffff?text=PK+Mart";
+
+      const productHTML = `
+        <div class="product-card">
+          <img src="${img}" alt="${title}">
+          <h4>${title}</h4>
+          <p class="price">₹${price} <small style="font-size:10px; color:#777;">(COD)</small></p>
+          <button class="buy-btn" onclick="openOrderModal('${title}', ${price})">अभी ऑर्डर करें</button>
+        </div>
+      `;
+
+      document.getElementById("productList").innerHTML += productHTML;
+      alert("✅ नया प्रोडक्ट PK Mart स्टोर पर जुड़ गया है!");
+      
+      // क्लियर फ़ॉर्म
+      document.getElementById("pTitle").value = "";
+      document.getElementById("pPrice").value = "";
+      document.getElementById("pImg").value = "";
+    }
+  </script>
+</body>
+</html>
+
